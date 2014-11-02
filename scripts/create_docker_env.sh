@@ -6,7 +6,7 @@ source ${BASH_SOURCE%/*}/functions.sh
 docker build -t kartoza/postgis git://github.com/kartoza/docker-postgis
 
 restart_postgis_server
-
+restart_postfix_server
 # Now build the django image
 
 cd ${BASH_SOURCE%/*}/../docker-prod

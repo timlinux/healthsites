@@ -8,6 +8,12 @@ QGIS_SERVER_PORT=49362
 QGIS_SERVER_CONTAINER_NAME=healthsites-qgis-server
 DJANGO_SERVER_PORT=49360
 DJANGO_CONTAINER_NAME=healthsites-django
+
+POSTFIX_CONTAINER_NAME=healthsites-postfix
+POSTFIX_REPO=catatnight/postfix
+SMTP_USER=info
+SMTP_PASS=info
+SMTP_DOMAIN=healthsites.io
 # Configurable options you probably want to change
 
 PG_USER=docker
@@ -15,6 +21,27 @@ PG_PASS=docker
 OPTIONS="-e DATABASE_NAME=gis -e DATABASE_USERNAME=${PG_USER} -e DATABASE_PASSWORD=${PG_PASS} -e DATABASE_HOST=${POSTGIS_CONTAINER_NAME} -e DJANGO_SETTINGS_MODULE=core.settings.prod_docker"
 
 # -------------------------
+
+function restart_postfix_server {
+
+    echo "Starting docker postfix container"
+    echo "-------------------------------------------------"
+
+    # Note for more heavy duty email service using something like sendgrid
+    # https://sendgrid.com/
+    # Which provides a hosted email service
+
+    docker kill ${POSTFIX_CONTAINER_NAME}
+    docker rm ${POSTFIX_CONTAINER_NAME}
+    docker run \
+        --restart="always" \
+        --name="${POSTFIX_CONTAINER_NAME}" \
+        --hostname="${POSTFIX_CONTAINER_NAME}" \
+        -e maildomain=${SMTP_DOMAIN} -e smtp_user=${SMTP_USER}:${SMTP_PASS} \
+        -d -t \
+        ${POSTFIX_REPO}
+}
+
 function restart_postgis_server {
 
     echo "Starting docker postgis container for public data"
@@ -32,14 +59,8 @@ function restart_postgis_server {
         -d -t \
         kartoza/postgis
 
-
-    # Todo:  prevent multiple entries in pgpass
-    #echo "localhost:${POSTGIS_PORT}:*:${USER}:${PASSWORD}" >> ~/.pgpass
-
     sleep 20
-
 }
-
 
 function restart_qgis_server {
 
@@ -108,6 +129,7 @@ function run_django_server {
         --hostname="${DJANGO_CONTAINER_NAME}" \
         ${OPTIONS} \
         --link ${POSTGIS_CONTAINER_NAME}:${POSTGIS_CONTAINER_NAME} \
+        --link ${POSTFIX_CONTAINER_NAME}:${POSTFIX_CONTAINER_NAME} \
         -v /home/${USER}/production-sites/healthsites:/home/web \
         -v /tmp/healthsites-tmp:/tmp/healthsites-tmp \
         -p 49360:49360 \

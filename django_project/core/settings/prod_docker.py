@@ -16,3 +16,9 @@ DATABASES = {
         'TEST_NAME': 'unittests',
     }
 }
+
+EMAIL_HOST = 'healthsites-postfix'
+EMAIL_HOST_USER = 'info'
+EMAIL_HOST_PASSWORD = 'info'
+EMAIL_PORT = 25
+EMAIL_USE_TLS = False
